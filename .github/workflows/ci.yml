@@ -46,6 +46,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/udaymahamud/cloud-devops-node-app
+          tags: |
+            type=raw,value=main
+            type=sha,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
