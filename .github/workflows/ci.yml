@@ -25,3 +25,6 @@ jobs:
 
       - name: Check JavaScript syntax
         run: node --check server.js
+
+      - name: Build Docker image
+        run: docker build -t cloud-devops-node-app:ci .
