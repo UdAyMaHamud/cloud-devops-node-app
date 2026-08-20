@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Node.js CI/CD
 
 on:
   push:
@@ -12,6 +12,7 @@ env:
 
 jobs:
   build:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     permissions:
@@ -56,3 +57,41 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Configure SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/github-actions-deploy
+          chmod 600 ~/.ssh/github-actions-deploy
+
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy immutable Docker image
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          IMAGE_TAG="sha-${GITHUB_SHA:0:7}"
+          IMAGE="ghcr.io/udaymahamud/cloud-devops-node-app:${IMAGE_TAG}"
+
+          echo "Deploying image: ${IMAGE}"
+
+          ssh \
+            -i ~/.ssh/github-actions-deploy \
+            -o StrictHostKeyChecking=yes \
+            "${EC2_USER}@${EC2_HOST}" \
+            "~/deploy/deploy.sh '${IMAGE}'"
