@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 8080;
 const ENVIRONMENT = process.env.NODE_ENV || "development";
 
 app.get("/", (req, res) => {
-    res.send("Cloud DevOps Node.js Application v1");
+    res.send("Cloud DevOps Node.js Application v2");
 });
 
 app.get("/health", (req, res) => {
